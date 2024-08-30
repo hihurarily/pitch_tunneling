@@ -6,16 +6,16 @@ import os
 import pandas as pd
  
 
-teams = ['TOR', 'BAL', 'TB', 'BOS', 'NYY', 
+TEAMS = ['TOR', 'BAL', 'TB', 'BOS', 'NYY', 
          'CLE', 'KC', 'DET', 'MIN', 'CWS', 
          'LAA', 'HOU', 'OAK', 'SEA', 'TEX',
          'ATL', 'MIA', 'NYM', 'WSH', 'PHI',
          'MIL', 'STL', 'CHC', 'PIT', 'CIN',
          'AZ', 'LAD', 'SF', 'SD', 'COL']
 
-glossary = ['pitch_type', 'release_pos_x', 'release_pos_z', 'pitcher',
-            'description', 'stand', 'pfx_x', 'pfx_z', 'plate_x', 'plate_z',
-            'vx0', 'vy0', 'vz0', 'ax', 'ay', 'az', 'release_pos_y']
+GLOSSARY = ['pitch_type', 'release_speed', 'release_pos_x', 'release_pos_z', 'player_name', 'pitcher',
+            'events', 'description', 'stand', 'balls', 'strikes', 'pfx_x', 'pfx_z', 'plate_x', 'plate_z',
+            'vx0', 'vy0', 'vz0', 'ax', 'ay', 'az', 'release_spin_rate', 'release_pos_y', 'spin_axis', 'delta_run_exp']
 
 
 def data_crawler():
@@ -29,7 +29,7 @@ def data_crawler():
     chrome = webdriver.Chrome(options=options)
     chrome.get("https://baseballsavant.mlb.com/statcast_search")
 
-    for team in teams:
+    for team in TEAMS:
         time.sleep(1)
         team_list = chrome.find_element(By.XPATH, "//div[@class='mock-pulldown-inner'][@id='ddlTeam']/div")
         team_list.click()
@@ -55,10 +55,14 @@ def data_crawler():
 
 def data_classifier():
     os.chdir("../data")
-    for team_csv in os.listdir(os.getcwd()):
-        raw_data = pd.read_csv(team_csv)
-        necessary_data = raw_data[glossary]
-        
+    for filename in os.listdir(os.getcwd()):
+        if filename.endswith('.csv'):
+            raw_data = pd.read_csv(filename)
+            necessary_data = raw_data[GLOSSARY]
+            if not os.path.exists(filename.split('.')[0]):
+                os.makedirs(filename.split('.')[0])
+            for df in necessary_data.groupby(['pitcher']):
+                df[1].to_csv(filename.split('.')[0] + '/' + df[1]['player_name'].iloc[0], index = False)       
 
 
 if __name__ == "__main__":
